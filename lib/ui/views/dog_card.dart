@@ -19,18 +19,23 @@ class DogCard extends StatelessWidget {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                "https://doggydo-upload-bucket.s3.eu-west-2.amazonaws.com/${dog.dogImageLink}",
-                height: 100,
-                width: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Image.asset(
-                    "assets/images/profile_image_hold.png",
-                    height: 100,
-                    width: 100,
-                    fit: BoxFit.cover,
-                  );
+              child: FutureBuilder(
+                future: loadImage(context),
+                builder: (BuildContext context, AsyncSnapshot<Image> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  } else if (snapshot.hasError) {
+                    return Image.asset(
+                      "assets/images/profile_image_hold.png",
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                    );
+                  } else {
+                    return snapshot.data!;
+                  }
                 },
               ),
             ),
@@ -50,5 +55,16 @@ class DogCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<Image> loadImage(BuildContext context) async {
+    final Image image = Image.network(
+      "https://doggydo-upload-bucket.s3.eu-west-2.amazonaws.com/${dog.dogImageLink}",
+      height: 100,
+      width: 100,
+      fit: BoxFit.cover,
+    );
+    await precacheImage(image.image, context);
+    return image;
   }
 }
